@@ -8,16 +8,16 @@ import (
 
 // struct name capital so it is now public
 type Config struct {
-	PORT string
-	ENV  string
+	// PORT string
+	ENV string
 }
 
 func MustLoad() Config {
 	godotenv.Load()
-	port := os.Getenv("PORT")
-	if port == "" {
-		panic("PORT is required")
-	}
+	// port := os.Getenv("PORT")
+	// if port == "" {
+	// 	panic("PORT is required")
+	// }
 
 	env := os.Getenv("ENV")
 	if env == "" {
@@ -25,8 +25,8 @@ func MustLoad() Config {
 	}
 
 	return Config{
-		PORT: port,
-		ENV:  env,
+		// PORT: port,
+		ENV: env,
 	}
 }
 
