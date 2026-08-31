@@ -4,19 +4,14 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/Denish099/olx/internal/handlers"
 )
 
 func main() {
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
-
-		w.Header().Set("Content-Type", "appication/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{
-			"status": "all ok"
-		}`))
-	})
+	mux.HandleFunc("GET /healthz", handlers.Health)
 
 	srv := http.Server{
 		Addr:         ":8080",
