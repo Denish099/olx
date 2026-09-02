@@ -14,7 +14,7 @@ import (
 func main() {
 	cfg := config.MustLoad()
 
-	_, err := db.Connect(cfg.DATABASE_URL)
+	db, err := db.Connect(cfg.DATABASE_URL)
 
 	// we should never do database migrations here because there could be many instance of this running each calling databaseMigration.
 	if err != nil {
@@ -23,6 +23,8 @@ func main() {
 	fmt.Println("database connected")
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", handlers.Health)
+
+	mux.HandleFunc("GET /listings", handlers.List(db))
 
 	srv := http.Server{
 		Addr:         ":8080",
