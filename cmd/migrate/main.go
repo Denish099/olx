@@ -33,7 +33,8 @@ func main() {
 			log.Fatalf("%v", err)
 		}
 	case "down":
-		if err := m.Down(); err != nil {
+		// in this down rollback all the way down so all data would be lost. so use steps
+		if err := m.Steps(-1); err != nil {
 			log.Fatalf("%v", err)
 		}
 	default:
