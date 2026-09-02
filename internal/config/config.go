@@ -9,7 +9,8 @@ import (
 // struct name capital so it is now public
 type Config struct {
 	// PORT string
-	ENV string
+	ENV          string
+	DATABASE_URL string
 }
 
 func MustLoad() Config {
@@ -24,9 +25,15 @@ func MustLoad() Config {
 		panic("ENV is required")
 	}
 
+	database_url := os.Getenv("DATABASE_URL")
+	if database_url == "" {
+		panic("DATABASE URL is required")
+	}
+
 	return Config{
 		// PORT: port,
-		ENV: env,
+		ENV:          env,
+		DATABASE_URL: database_url,
 	}
 }
 
