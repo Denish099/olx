@@ -15,6 +15,8 @@ func main() {
 	cfg := config.MustLoad()
 
 	_, err := db.Connect(cfg.DATABASE_URL)
+
+	// we should never do database migrations here because there could be many instance of this running each calling databaseMigration.
 	if err != nil {
 		log.Fatalf("main.db.connect: %v", err)
 	}
