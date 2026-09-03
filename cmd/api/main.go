@@ -24,7 +24,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", handlers.Health)
 
-	mux.HandleFunc("GET /listings", handlers.List(db))
+	mux.HandleFunc("GET /listings", handlers.List(db)) // closure factory List(db)
 
 	srv := http.Server{
 		Addr:         ":8080",
