@@ -22,9 +22,15 @@ func main() {
 	}
 	fmt.Println("database connected")
 	mux := http.NewServeMux()
+
+	lh := handlers.NewListingHandler(db)
+
+	//constructor pattern added dependency only once . not again and again
 	mux.HandleFunc("GET /healthz", handlers.Health)
 
-	mux.HandleFunc("GET /listings", handlers.List(db)) // closure factory List(db)
+	mux.HandleFunc("GET /listings", lh.List)
+
+	mux.HandleFunc("DELETE /listings/{id}", lh.Delete)
 
 	srv := http.Server{
 		Addr:         ":8080",
