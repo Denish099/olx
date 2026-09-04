@@ -3,9 +3,11 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
+
+	"github.com/Denish099/olx/internal/middleware"
 )
 
 type listing struct {
@@ -18,12 +20,14 @@ type listing struct {
 }
 
 type ListingHandler struct {
-	db *sql.DB
+	db     *sql.DB
+	logger *slog.Logger
 }
 
-func NewListingHandler(db *sql.DB) *ListingHandler {
+func NewListingHandler(db *sql.DB, logger *slog.Logger) *ListingHandler {
 	return &ListingHandler{
-		db: db,
+		db:     db,
+		logger: logger,
 	}
 }
 
@@ -37,7 +41,8 @@ func (lh ListingHandler) /*method reciever */ List(w http.ResponseWriter, r *htt
 			LIMIT 50`)
 
 	if err != nil {
-		log.Printf("query: %v", err)
+		lh.logger.Error("query.error", "err", err)
+
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
@@ -47,7 +52,8 @@ func (lh ListingHandler) /*method reciever */ List(w http.ResponseWriter, r *htt
 	for rows.Next() {
 		var l listing
 		if err := rows.Scan(&l.ID, &l.Title, &l.Description, &l.Price, &l.City, &l.Created_at); err != nil {
-			log.Printf("rows.scan: %v", err)
+			lh.logger.Error("rows.scan failed", "listings", len(listings), "err", err)
+
 			http.Error(w, "internal error", http.StatusInternalServerError)
 			return
 		}
@@ -56,7 +62,8 @@ func (lh ListingHandler) /*method reciever */ List(w http.ResponseWriter, r *htt
 	}
 
 	if err := rows.Err(); err != nil {
-		log.Printf("rows.err: %v", err)
+		lh.logger.Error("rows.error: ", "err", err)
+
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -67,12 +74,15 @@ func (lh ListingHandler) /*method reciever */ List(w http.ResponseWriter, r *htt
 }
 func (lh ListingHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	requestId := middleware.RequestIdFromContext(ctx)
 	id := r.PathValue("id")
 
 	_, err := lh.db.ExecContext(ctx, `DELETE FROM listings WHERE id = $1`, id)
 
 	if err != nil {
-		log.Printf("delete.lisings.err: %v", err)
+		// log.Printf("delete.lisings.err: %v", err)
+
+		lh.logger.Error("delete fail", "listing id", id, "requestId", requestId, "err", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
