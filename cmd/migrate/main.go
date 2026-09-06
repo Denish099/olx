@@ -2,65 +2,49 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"os"
 
 	"github.com/Denish099/olx/internal/config"
 	"github.com/golang-migrate/migrate/v4"
-
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 func main() {
-	if err := run(); err != nil {
-		log.Fatalf("migrate: %v", err)
-	}
-}
 
-func run() error {
 	if len(os.Args) < 2 {
-		return errors.New("usage: go run ./cmd/migrate <up|down>")
+		log.Fatal("usage : make migrate <up/down>")
 	}
 
 	cfg := config.MustLoad()
 
-	m, err := migrate.New("file://migrations", cfg.DatabaseURL)
+	m, err := migrate.New(
+		"file://migrations",
+		cfg.DATABASE_URL)
+
 	if err != nil {
-		return fmt.Errorf("migrate.new: %w", err)
+		log.Fatalf("migration.new: %v", err)
 	}
+	// fmt.Println(os.Args)
 
-	defer func() {
-		srcErr, dbErr := m.Close()
-		if srcErr != nil {
-			log.Printf("migrate.close source: %v", srcErr)
-		}
-		if dbErr != nil {
-			log.Printf("migrate.close database: %v", dbErr)
-		}
-	}()
-
-	cmd := os.Args[1]
-
-	switch cmd {
+	switch os.Args[1] {
 	case "up":
-
+		// FIX: m.Up() returns migrate.ErrNoChange when the DB is already up to
+		// date. That is a normal outcome, but the old code treated every error
+		// as fatal - so running `make migrate-up` twice in a row crashed.
 		if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-			return fmt.Errorf("up: %w", err)
+			log.Fatalf("%v", err)
 		}
-
 	case "down":
-
+		// in this down rollback all the way down so all data would be lost. so use steps
+		// same here: nothing left to roll back is not a failure
 		if err := m.Steps(-1); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-			return fmt.Errorf("down: %w", err)
+			log.Fatalf("%v", err)
 		}
-
 	default:
-
-		return fmt.Errorf("invalid command %q (want up or down)", cmd)
+		log.Fatalf("invalid command : %s", os.Args[1])
 	}
 
-	log.Printf("migrate %s: ok", cmd)
-	return nil
+	// fmt.Println("migration is running")
 }
