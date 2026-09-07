@@ -79,6 +79,7 @@ func (lh ListingHandler) /*method reciever */ List(w http.ResponseWriter, r *htt
 	_ = json.NewEncoder(w).Encode(listings)
 
 }
+
 func (lh ListingHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	requestId := middleware.RequestIdFromContext(ctx)
@@ -114,7 +115,7 @@ func (lh ListingHandler) Delete(w http.ResponseWriter, r *http.Request) {
 func (lh ListingHandler) Create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	requestId := middleware.RequestIdFromContext(ctx)
-	var req listing
+	var req CreateListingsReq
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		lh.logger.Error("failed to decode ", "request_id", requestId, "err", err)
@@ -123,22 +124,20 @@ func (lh ListingHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	row := lh.db.QueryRowContext(ctx, `
-	INSERT INTO listings (title, description, price, city) VALUES ($1, $2, $3, $4) RETURNING id`,
+	INSERT INTO listings (title, description, price, city) VALUES ($1, $2, $3, $4) RETURNING id,created_at`,
 		req.Title, req.Description, req.Price, req.City)
 
-	var id string
-	if err := row.Scan(&id); err != nil {
+	var res CreateListingsRes
+	if err := row.Scan(&res.ID, &res.Created_at); err != nil {
 		lh.logger.Error("failed to insert", "request_id", requestId, "err", err)
 
 		httpx.Error(w, http.StatusInternalServerError, "something went wrong", httpx.CodeInternalError)
 		return
 	}
 
-	lh.logger.Info("listings created", "request id", requestId, "listing_id", id)
+	lh.logger.Info("listings created", "request id", requestId, "listing_id", res.ID)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	_ = json.NewEncoder(w).Encode(map[string]string{
-		"id": id,
-	})
+	_ = json.NewEncoder(w).Encode(res)
 }
