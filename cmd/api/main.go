@@ -42,6 +42,8 @@ func main() {
 
 	mux.HandleFunc("DELETE /listings/{id}", lh.Delete)
 
+	mux.HandleFunc("POST /listings", lh.Create)
+
 	handler := middleware.RequestId(mux)
 
 	srv := http.Server{
